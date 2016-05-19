@@ -226,7 +226,7 @@ def set_adeus(bot, update, args):
     bot.sendMessage(chat_id=chat_id, text='OK, entendido!')
 
 
-def disable_adeus(bot, update):
+def desativar_adeus(bot, update):
     """ Desliga a mensagem de despedida """
 
     chat_id = update.message.chat.id
@@ -256,7 +256,7 @@ def travar(bot, update):
     bot.sendMessage(chat_id=chat_id, text='OK, entendido!')
 
 
-def quiet(bot, update):
+def sshh(bot, update):
     """Silencia o chat e mensagens de erro não são mais enviadas """
 
     chat_id = update.message.chat.id
@@ -271,7 +271,7 @@ def quiet(bot, update):
     bot.sendMessage(chat_id=chat_id, text='OK, entendido!')
 
 
-def unquiet(bot, update):
+def acordar(bot, update):
     """ Unquiets the chat """
 
     chat_id = update.message.chat.id
@@ -298,7 +298,7 @@ def destravar(bot, update):
     # Unlock the bot for this chat
     db.set(str(chat_id) + '_lck', False)
 
-    bot.sendMessage(chat_id=chat_id, text='Got it!')
+    bot.sendMessage(chat_id=chat_id, text='OK, entendido!def')
 
 
 def empty_message(bot, update):
