@@ -8,8 +8,8 @@ import python3pickledb as pickledb
 import traceback
 
 # Configuration
-BOTNAME = 'examplebot'
-TOKEN = 'TOKEN'
+BOTNAME = 'Recepção_Pirata'
+TOKEN = '190680457:AAHuznj20qF2en21oPlcv3G52Sokn9c7mOo'
 
 # Fill these if you want to use webhook
 BASE_URL = 'example.com'  # Domain name of your server, without
@@ -19,18 +19,16 @@ PORT = 5002  # Port on which the Webhook should listen on
 CERT = 'cert.pem'
 CERT_KEY = 'key.key'
 
-help_text = 'Welcomes everyone that enters a group chat that this bot is a ' \
-            'part of. By default, only the person who invited the bot into ' \
-            'the group is able to change settings.\nCommands:\n\n' \
-            '/welcome - Set welcome message\n' \
-            '/goodbye - Set goodbye message\n' \
-            '/disable\\_goodbye - Disable the goodbye message\n' \
-            '/lock - Only the person who invited the bot can change messages\n'\
-            '/unlock - Everyone can change messages\n\n' \
-            'You can use _$username_ and _$title_ as placeholders when setting'\
-            ' messages.\n' \
-            'Please [rate me](http://storebot.me/bot/examplebot) :) ' \
-            'Questions? Message my creator @exampleuser'
+help_text = 'Este bot recebe as pessoas que entram em um grupo ao qual ele ' \
+            'pertence. Por padrão, apenas a pessoa que convidou o bot pode ' \
+            'modificar suas configurações.\nCommands:\n\n' \
+            '/boasvindas - Colocar mensagem de boas-vindas\n' \
+            '/adeus - Colocar mensagem de despedida\n' \
+            '/desativar\\_adeus - Desativar mensagem de despedida\n' \
+            '/travar - Apenas a pessoa que convidou o bot pode mudar as mensagens\n'\
+            '/destravar - Todas as pessoas podem mudar as mensagens\n\n' \
+            'Você pode usar _$username_ e _$title_ como placeholders enquanto estabelece'\
+            'as mensagens.\n' \
 
 '''
 Create database object
@@ -59,7 +57,7 @@ logging.basicConfig(level=logging.DEBUG,
 logger = logging.getLogger(__name__)
 
 
-def check(bot, update, override_lock=None):
+def checar(bot, update, override_lock=None):
     """
     Perform some checks on the update. If checks were successful, returns True,
     else sends an error message to the chat and returns False.
@@ -70,7 +68,7 @@ def check(bot, update, override_lock=None):
 
     if chat_id > 0:
         bot.sendMessage(chat_id=chat_id,
-                        text='Please add me to a group first!')
+                        text='Por favor, adicione-me primeiro!')
         return False
 
     locked = override_lock if override_lock is not None \
@@ -78,16 +76,16 @@ def check(bot, update, override_lock=None):
 
     if locked and db.get(chat_str + '_adm') != update.message.from_user.id:
         if not db.get(chat_str + '_quiet'):
-            bot.sendMessage(chat_id=chat_id, text='Sorry, only the person who '
-                                                  'invited me can do that.')
+            bot.sendMessage(chat_id=chat_id, text='Perdão, apenas a pessoa que me convidou'
+                                                  'pode fazer isso.')
         return False
 
     return True
 
 
 # Welcome a user to the chat
-def welcome(bot, update):
-    """ Welcomes a user to the chat """
+def ahoy(bot, update):
+    """ Dá boas-vindas a uma pessoa nova no chat """
 
     message = update.message
     chat_id = message.chat.id
@@ -101,7 +99,7 @@ def welcome(bot, update):
 
     # Use default message if there's no custom one set
     if text is None:
-        text = 'Hello $username! Welcome to $title %s' \
+        text = 'Olá, $username! Seja bem-vinda(o) a $title %s' \
                   % Emoji.GRINNING_FACE_WITH_SMILING_EYES
 
     # Replace placeholders and send message
@@ -111,9 +109,9 @@ def welcome(bot, update):
     bot.sendMessage(chat_id=chat_id, text=text)
 
 
-# Welcome a user to the chat
-def goodbye(bot, update):
-    """ Sends goodbye message when a user left the chat """
+# Dá boas-vindas a alguém no chat
+def adeus(bot, update):
+    """ Envia mensagem de despedida para quem sai do chat """
 
     message = update.message
     chat_id = message.chat.id
@@ -125,13 +123,13 @@ def goodbye(bot, update):
     # Pull the custom message for this chat from the database
     text = db.get(str(chat_id) + '_bye')
 
-    # Goodbye was disabled
+    # Despedida desativada
     if text is False:
         return
 
-    # Use default message if there's no custom one set
+    # Usar mensagem padrão na falta de uma customizada
     if text is None:
-        text = 'Goodbye, $username!'
+        text = 'Adeus, $username!'
 
     # Replace placeholders and send message
     text = text.replace('$username',
@@ -140,32 +138,31 @@ def goodbye(bot, update):
     bot.sendMessage(chat_id=chat_id, text=text)
 
 
-# Introduce the bot to a chat its been added to
-def introduce(bot, update):
+# Introduzir o bot a um chat onde ele tenha sido adicionado
+def introduzir(bot, update):
     """
-    Introduces the bot to a chat its been added to and saves the user id of the
-    user who invited us.
+    Introduz o bot a um chat onde ele tenha sido adicionado e salva a ID de quem o convidou.
     """
 
     chat_id = update.message.chat.id
     invited = update.message.from_user.id
 
-    logger.info('Invited by %s to chat %d (%s)'
+    logger.info('Convidado por %s para o chat %d (%s)'
                 % (invited, chat_id, update.message.chat.title))
 
     db.set(str(chat_id) + '_adm', invited)
     db.set(str(chat_id) + '_lck', True)
 
-    text = 'Hello %s! I will now greet anyone who joins this chat with a' \
-           ' nice message %s \nCheck the /help command for more info!'\
+    text = 'Olá, %s! Estarei recebendo quem entrar neste chat com uma' \
+           ' mensagem simpática %s \nVeja o comando de /ajuda para mais detalhes!'\
            % (update.message.chat.title,
               Emoji.GRINNING_FACE_WITH_SMILING_EYES)
     bot.sendMessage(chat_id=chat_id, text=text)
 
 
-# Print help text
-def help(bot, update):
-    """ Prints help text """
+# Mostrar texto de ajuda
+def ajuda(bot, update):
+    """ Mostra um texto de ajuda """
 
     chat_id = update.message.chat.id
 
@@ -175,20 +172,20 @@ def help(bot, update):
                     disable_web_page_preview=True)
 
 
-# Set custom message
-def set_welcome(bot, update, args):
-    """ Sets custom welcome message """
+# Colocar mensagem customizada
+def set_ahoy(bot, update, args):
+    """ Coloca uma mensagem customizada de boas-vindas """
 
     chat_id = update.message.chat.id
 
-    # Check admin privilege and group context
-    if not check(bot, update):
+    # Checar contexto do grupo e privilégios de admin
+    if not checar(bot, update):
         return
 
     # Split message into words and remove mentions of the bot
     message = ' '.join(args)
 
-    # Only continue if there's a message
+    # Continuar apenas se houver uma mensagem
     if not message:
         bot.sendMessage(chat_id=chat_id, text='You need to send a message,'
                                               ' too! For example:\n'
@@ -196,20 +193,20 @@ def set_welcome(bot, update, args):
                                               ' welcome to $title!')
         return
 
-    # Put message into database
+    # Colocar mensagem no banco de dados
     db.set(str(chat_id), message)
 
     bot.sendMessage(chat_id=chat_id, text='Got it!')
 
 
-# Set custom message
-def set_goodbye(bot, update, args):
-    """ Enables and sets custom goodbye message """
+# Colocar mensagem de despedida customizada
+def set_adeus(bot, update, args):
+    """ Habilita e coloca uma mensagem de despedida customizada """
 
     chat_id = update.message.chat.id
 
     # Check admin privilege and group context
-    if not check(bot, update):
+    if not checar(bot, update):
         return
 
     # Split message into words and remove mentions of the bot
