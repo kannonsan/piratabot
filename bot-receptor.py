@@ -9,7 +9,7 @@ import traceback
 
 # Configuration
 BOTNAME = 'Recepção_Pirata'
-TOKEN = '190680457:AAHuznj20qF2en21oPlcv3G52Sokn9c7mOo'
+TOKEN = 'TOKEN'
 
 # Fill these if you want to use webhook
 BASE_URL = 'example.com'  # Domain name of your server, without
@@ -22,7 +22,7 @@ CERT_KEY = 'key.key'
 help_text = 'Este bot recebe as pessoas que entram em um grupo ao qual ele ' \
             'pertence. Por padrão, apenas a pessoa que convidou o bot pode ' \
             'modificar suas configurações.\nCommands:\n\n' \
-            '/boasvindas - Colocar mensagem de boas-vindas\n' \
+            '/ahoy - Colocar mensagem de boas-vindas\n' \
             '/adeus - Colocar mensagem de despedida\n' \
             '/desativar\\_adeus - Desativar mensagem de despedida\n' \
             '/travar - Apenas a pessoa que convidou o bot pode mudar as mensagens\n'\
@@ -83,7 +83,7 @@ def checar(bot, update, override_lock=None):
     return True
 
 
-# Welcome a user to the chat
+# Receber uma pessoa nova num chat
 def ahoy(bot, update):
     """ Dá boas-vindas a uma pessoa nova no chat """
 
@@ -97,7 +97,7 @@ def ahoy(bot, update):
     # Pull the custom message for this chat from the database
     text = db.get(str(chat_id))
 
-    # Use default message if there's no custom one set
+    # Usar mensagem padrão na falta de uma customizada
     if text is None:
         text = 'Olá, $username! Seja bem-vinda(o) a $title %s' \
                   % Emoji.GRINNING_FACE_WITH_SMILING_EYES
@@ -109,7 +109,7 @@ def ahoy(bot, update):
     bot.sendMessage(chat_id=chat_id, text=text)
 
 
-# Dá boas-vindas a alguém no chat
+# Despede-se de alguém no chat
 def adeus(bot, update):
     """ Envia mensagem de despedida para quem sai do chat """
 
@@ -196,7 +196,7 @@ def set_ahoy(bot, update, args):
     # Colocar mensagem no banco de dados
     db.set(str(chat_id), message)
 
-    bot.sendMessage(chat_id=chat_id, text='Got it!')
+    bot.sendMessage(chat_id=chat_id, text='OK, entendido!')
 
 
 # Colocar mensagem de despedida customizada
@@ -223,11 +223,11 @@ def set_adeus(bot, update, args):
     # Put message into database
     db.set(str(chat_id) + '_bye', message)
 
-    bot.sendMessage(chat_id=chat_id, text='Got it!')
+    bot.sendMessage(chat_id=chat_id, text='OK, entendido!')
 
 
-def disable_goodbye(bot, update):
-    """ Disables the goodbye message """
+def disable_adeus(bot, update):
+    """ Desliga a mensagem de despedida """
 
     chat_id = update.message.chat.id
 
@@ -238,10 +238,10 @@ def disable_goodbye(bot, update):
     # Disable goodbye message
     db.set(str(chat_id) + '_bye', False)
 
-    bot.sendMessage(chat_id=chat_id, text='Got it!')
+    bot.sendMessage(chat_id=chat_id, text='OK, entendido!')
 
 
-def lock(bot, update):
+def travar(bot, update):
     """ Locks the chat, so only the invitee can change settings """
 
     chat_id = update.message.chat.id
@@ -250,25 +250,25 @@ def lock(bot, update):
     if not check(bot, update, override_lock=True):
         return
 
-    # Lock the bot for this chat
+    # Trava o bot para este chat
     db.set(str(chat_id) + '_lck', True)
 
-    bot.sendMessage(chat_id=chat_id, text='Got it!')
+    bot.sendMessage(chat_id=chat_id, text='OK, entendido!')
 
 
 def quiet(bot, update):
-    """ Quiets the chat, so no error messages will be sent """
+    """Silencia o chat e mensagens de erro não são mais enviadas """
 
     chat_id = update.message.chat.id
 
-    # Check admin privilege and group context
+    # Checar contexto do grupo e privilégios de admin
     if not check(bot, update, override_lock=True):
         return
 
-    # Lock the bot for this chat
+    # Trava o bot para este chat
     db.set(str(chat_id) + '_quiet', True)
 
-    bot.sendMessage(chat_id=chat_id, text='Got it!')
+    bot.sendMessage(chat_id=chat_id, text='OK, entendido!')
 
 
 def unquiet(bot, update):
@@ -276,23 +276,23 @@ def unquiet(bot, update):
 
     chat_id = update.message.chat.id
 
-    # Check admin privilege and group context
-    if not check(bot, update, override_lock=True):
+    # Checar contexto do grupo e privilégios de admin
+    if not checar(bot, update, override_lock=True):
         return
 
     # Lock the bot for this chat
     db.set(str(chat_id) + '_quiet', False)
 
-    bot.sendMessage(chat_id=chat_id, text='Got it!')
+    bot.sendMessage(chat_id=chat_id, text='OK, entendido!')
 
 
-def unlock(bot, update):
-    """ Unlocks the chat, so everyone can change settings """
+def destravar(bot, update):
+    """ Destrava o chat e todas as pessoas podem mudar configurações """
 
     chat_id = update.message.chat.id
 
-    # Check admin privilege and group context
-    if not check(bot, update):
+    # Checar contexto do grupo e privilégios de admin
+    if not checar(bot, update):
         return
 
     # Unlock the bot for this chat
@@ -313,20 +313,20 @@ def empty_message(bot, update):
     if update.message.chat.id not in chats:
         chats.append(update.message.chat.id)
         db.set('chats', chats)
-        logger.info("I have been added to %d chats" % len(chats))
+        logger.info("Fui adicionado aos chats %d " % len(chats))
 
     if update.message.new_chat_participant is not None:
-        # Bot was added to a group chat
+        # Bot foi adicionado a um chat
         if update.message.new_chat_participant.username == BOTNAME:
             return introduce(bot, update)
-        # Another user joined the chat
+        # Outra pessoa entrou no chat
         else:
-            return welcome(bot, update)
+            return ahoy(bot, update)
 
-    # Someone left the chat
+    # Alguém saiu do chat
     elif update.message.left_chat_participant is not None:
         if update.message.left_chat_participant.username != BOTNAME:
-            return goodbye(bot, update)
+            return adeus(bot, update)
 
 
 def broadcast(bot, update, args):
